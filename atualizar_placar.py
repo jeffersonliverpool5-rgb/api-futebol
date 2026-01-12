@@ -1,32 +1,25 @@
-name: Atualizador de Placar
+import requests
+from bs4 import BeautifulSoup
 
-on:
-  schedule:
-    - cron: '0 * * * *' # Isso faz o robô rodar sozinho a cada 1 hora
-  workflow_dispatch: # Isso cria o botão para você rodar na hora que quiser
+def buscar_noticia():
+    try:
+        # Acessa o site do Meu Timão
+        url = "https://www.meutimao.com.br/noticias-do-corinthians/"
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resposta = requests.get(url, headers=headers)
+        
+        # Lê a página e pega o título da primeira notícia
+        site = BeautifulSoup(resposta.text, 'html.parser')
+        noticia = site.find('h2') 
+        
+        if noticia:
+            return f"NOTÍCIA DO TIMÃO: {noticia.text.strip()}"
+        else:
+            return "Nenhuma notícia encontrada agora."
+    except:
+        return "Erro ao acessar o site do Meu Timão."
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Baixar o codigo do seu repositorio
-        uses: actions/checkout@v4
-
-      - name: Configurar o Python no servidor
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Instalar bibliotecas necessarias
-        run: pip install requests
-
-      - name: Executar o script que atualiza o texto
-        run: python atualizar_placar.py
-
-      - name: Salvar as mudancas no seu arquivo txt
-        run: |
-          git config --global user.name 'Bot do Timao'
-          git config --global user.email 'bot@github.com'
-          git add apifutebol.txt
-          git commit -m "Placar atualizado automaticamente" || echo "Sem alteracoes para salvar"
-          git push
+if __name__ == "__main__":
+    texto = buscar_noticia()
+    with open("apifutebol.txt", "w", encoding="utf-8") as f:
+        f.write(texto)
