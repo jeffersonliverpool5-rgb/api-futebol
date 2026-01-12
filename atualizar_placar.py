@@ -3,23 +3,23 @@ from bs4 import BeautifulSoup
 
 def buscar_noticia():
     try:
-        url = "https://www.meutimao.com.br/noticias-do-corinthians/"
-        # Este cabeçalho finge que somos um navegador Chrome no Windows
+        # Trocamos para a Gazeta Esportiva (Seção Corinthians)
+        url = "https://www.gazetaesportiva.com/times/corinthians/"
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
         
-        resposta = requests.get(url, headers=headers, timeout=10)
+        resposta = requests.get(url, headers=headers, timeout=15)
         
         if resposta.status_code == 200:
             site = BeautifulSoup(resposta.text, 'html.parser')
-            # Tentando pegar o título da notícia principal
-            noticia = site.find('h2')
+            # Na Gazeta, as notícias principais ficam em tags <h3> ou <a> dentro de títulos
+            noticia = site.find('h3')
+            
             if noticia:
-                return f"ÚLTIMA DO TIMÃO: {noticia.text.strip()}"
+                return f"NOTÍCIA DO TIMÃO (Gazeta): {noticia.text.strip()}"
         
-        return "Erro: O site bloqueou o acesso ou mudou o formato."
+        return "Erro: O servidor não conseguiu ler a notícia no momento."
         
     except Exception as e:
         return f"Erro na busca: {e}"
@@ -28,4 +28,4 @@ if __name__ == "__main__":
     texto_final = buscar_noticia()
     with open("apifutebol.txt", "w", encoding="utf-8") as f:
         f.write(texto_final)
-    print("Processo finalizado.")
+    print("Processo finalizado com sucesso!")
