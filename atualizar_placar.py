@@ -3,28 +3,29 @@ from bs4 import BeautifulSoup
 
 def buscar_noticia():
     try:
-        # Acessa o site do Meu Timão
         url = "https://www.meutimao.com.br/noticias-do-corinthians/"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        resposta = requests.get(url, headers=headers)
+        # Este cabeçalho finge que somos um navegador Chrome no Windows
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept-Language': 'pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7'
+        }
         
-        # Lê a página e busca o título da primeira notícia (geralmente em um h2)
-        site = BeautifulSoup(resposta.text, 'html.parser')
-        noticia = site.find('h2') 
+        resposta = requests.get(url, headers=headers, timeout=10)
         
-        if noticia:
-            return f"ÚLTIMA DO TIMÃO: {noticia.text.strip()}"
-        else:
-            return "Corinthians: Nenhuma notícia nova encontrada agora."
+        if resposta.status_code == 200:
+            site = BeautifulSoup(resposta.text, 'html.parser')
+            # Tentando pegar o título da notícia principal
+            noticia = site.find('h2')
+            if noticia:
+                return f"ÚLTIMA DO TIMÃO: {noticia.text.strip()}"
+        
+        return "Erro: O site bloqueou o acesso ou mudou o formato."
+        
     except Exception as e:
-        return f"Erro ao acessar o site: {e}"
+        return f"Erro na busca: {e}"
 
 if __name__ == "__main__":
-    # Pega a informação do site
-    texto_para_salvar = buscar_noticia()
-    
-    # Abre o arquivo apifutebol.txt, apaga o que tem e escreve o novo
+    texto_final = buscar_noticia()
     with open("apifutebol.txt", "w", encoding="utf-8") as f:
-        f.write(texto_para_salvar)
-    
-    print("Sucesso: Arquivo apifutebol.txt atualizado!")
+        f.write(texto_final)
+    print("Processo finalizado.")
