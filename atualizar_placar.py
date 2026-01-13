@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 def buscar_noticia():
     try:
         # Trocamos para a Gazeta Esportiva (Seção Corinthians)
-        url = "https://www.espn.com.br/futebol/time/_/id/874/corinthians"
+        url = "https://www.gazetaesportiva.com/times/corinthians/"
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         }
