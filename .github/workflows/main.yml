@@ -19,16 +19,16 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install Dependencies
+      - name: Install Tools
         run: pip install requests beautifulsoup4 pytz
 
       - name: Run Script
         run: python atualizar_placar.py
 
-      - name: Commit and Push
+      - name: Save to GitHub
         run: |
           git config --global user.name 'Bot do Timao'
           git config --global user.email 'bot@github.com'
           git add apifutebol.txt
-          git commit -m "Noticia fresca atualizada" || echo "Sem mudanças"
+          git commit -m "Atualizacao forçada" || echo "Sem mudanças"
           git push
