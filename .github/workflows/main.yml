@@ -2,33 +2,33 @@ name: Atualizador de Placar
 
 on:
   schedule:
-    - cron: '0 * * * *' # Roda automaticamente a cada 1 hora
-  workflow_dispatch: # Permite que você clique no botão "Run workflow"
+    - cron: '0 */3 * * *' # Comando para rodar a cada 3 horas
+  workflow_dispatch: # Mantém o botão de "Play" manual
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Dá permissão para o robô salvar o arquivo
+      contents: write # Permissão para o robô salvar no seu repositório
     steps:
-      - name: Baixando o código do repositório
+      - name: Baixando codigo
         uses: actions/checkout@v4
 
-      - name: Configurando o Python
+      - name: Configurando Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: Instalando as ferramentas de busca
-        run: pip install requests beautifulsoup4
+      - name: Instalando Ferramentas
+        run: pip install requests beautifulsoup4 pytz
 
-      - name: Rodando o script de atualização
+      - name: Rodando o Script
         run: python atualizar_placar.py
 
-      - name: Salvando a nova informação no GitHub
+      - name: Salvando Alteracoes
         run: |
           git config --global user.name 'Bot do Timao'
           git config --global user.email 'bot@github.com'
           git add apifutebol.txt
-          git commit -m "Notícia atualizada automaticamente" || echo "Sem mudanças"
+          git commit -m "Noticia atualizada automaticamente" || echo "Sem mudanças"
           git push
