@@ -2,45 +2,51 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
-import random
+import os
 
-def buscar_noticia_variada():
+def executar():
+    # Configuração de Hora
+    fuso = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso).strftime('%H:%M')
+    
     try:
         url = "https://www.lance.com.br/futebol-americano"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         
         resposta = requests.get(url, headers=headers, timeout=15)
-        fuso = pytz.timezone('America/Sao_Paulo')
-        agora = datetime.now(fuso).strftime('%H:%M')
-
-        if resposta.status_code == 200:
-            site = BeautifulSoup(resposta.text, 'html.parser')
-            
-            # Pega todos os títulos de notícias
-            manchetes = site.find_all(['h3', 'h2'])
-            
-            # Filtra apenas notícias reais (textos longos e sem ser propaganda)
-            lista_noticias = []
-            for m in manchetes:
-                texto = m.text.strip()
-                if len(texto) > 35 and "Últimas notícias" not in texto:
-                    lista_noticias.append(texto)
-            
-            if lista_noticias:
-                # Escolhe uma notícia aleatória da lista das 10 primeiras
-                # Assim, a cada 3 horas, a chance de mudar no seu OLED é gigante
-                noticia_escolhida = random.choice(lista_noticias[:10])
-                return f"{agora} - {noticia_escolhida}"
+        site = BeautifulSoup(resposta.text, 'html.parser')
         
-        return f"{agora} - Sem noticias novas."
+        # Busca todas as manchetes
+        manchetes = [m.get_text().strip() for m in site.find_all(['h2', 'h3']) if len(m.get_text().strip()) > 30]
+        
+        if not manchetes:
+            conteudo = f"{agora} - Buscando noticias..."
+        else:
+            # Lógica para alternar as notícias (Carrossel)
+            indice_file = "indice.txt"
+            idx = 0
+            if os.path.exists(indice_file):
+                with open(indice_file, "r") as f:
+                    try: idx = int(f.read().strip())
+                    except: idx = 0
+            
+            # Se chegar ao fim das 10 primeiras, volta ao zero
+            if idx >= len(manchetes) or idx >= 10:
+                idx = 0
+            
+            conteudo = f"{agora} - {manchetes[idx]}"
+            
+            # Salva o próximo índice
+            with open(indice_file, "w") as f:
+                f.write(str(idx + 1))
         
     except Exception as e:
-        return f"{agora} - Erro na busca."
+        conteudo = f"{agora} - Erro: {str(e)[:20]}"
 
-if __name__ == "__main__":
-    conteudo = buscar_noticia_variada()
-    
-    # Salva em uma única linha para facilitar a leitura no seu display OLED
+    # Salva o arquivo para o OLED
     with open("apifutebol.txt", "w", encoding="utf-8") as f:
         f.write(conteudo)
-    print(f"Postado no arquivo: {conteudo}")
+    print(f"Salvo: {conteudo}")
+
+if __name__ == "__main__":
+    executar()
