@@ -2,69 +2,78 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
-import time
+import os
 
-def buscar_conteudo_materia(url_materia):
+def buscar_resumo(url_materia):
     try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         resp = requests.get(url_materia, headers=headers, timeout=10)
         soup = BeautifulSoup(resp.text, 'html.parser')
-        
-        # Tenta encontrar o primeiro parágrafo da notícia
-        paragrafo = soup.find('p')
-        if paragrafo:
-            texto = paragrafo.text.strip()
-            return (texto[:100] + '...') if len(texto) > 100 else texto
-        return "Conteúdo indisponível."
+        # O Lance costuma usar a classe 'content-text' ou apenas tags <p>
+        paragrafos = soup.find_all('p')
+        for p in paragrafos:
+            texto = p.text.strip()
+            if len(texto) > 50: # Pega o primeiro parágrafo relevante
+                return texto[:90] + "..." 
+        return ""
     except:
-        return "Erro ao ler matéria."
+        return ""
 
-def rodar_noticias():
+def executar():
     url_base = "https://www.lance.com.br"
     url_nfl = "https://www.lance.com.br/futebol-americano"
     headers = {'User-Agent': 'Mozilla/5.0'}
     fuso = pytz.timezone('America/Sao_Paulo')
+    agora = datetime.now(fuso).strftime('%H:%M')
 
-    print("Iniciando carrossel de notícias... (Ctrl+C para parar)")
+    try:
+        resposta = requests.get(url_nfl, headers=headers, timeout=15)
+        site = BeautifulSoup(resposta.text, 'html.parser')
+        
+        # Coleta todas as notícias da página principal
+        links = site.find_all('a', href=True)
+        noticias = []
+        for l in links:
+            titulo = l.find(['h2', 'h3'])
+            if titulo and len(titulo.text.strip()) > 30:
+                href = l['href']
+                url_completa = href if href.startswith('http') else url_base + href
+                noticias.append({'t': titulo.text.strip(), 'u': url_completa})
 
-    while True:
-        try:
-            resposta = requests.get(url_nfl, headers=headers, timeout=15)
-            site = BeautifulSoup(resposta.text, 'html.parser')
+        if not noticias:
+            print("Nenhuma notícia encontrada.")
+            return
+
+        # Lógica de rotação (lê qual foi a última notícia exibida)
+        indice_file = "indice.txt"
+        idx = 0
+        if os.path.exists(indice_file):
+            with open(indice_file, "r") as f:
+                idx = int(f.read().strip())
+        
+        # Reinicia se chegar no fim da lista (limitado às 10 últimas)
+        if idx >= len(noticias[:10]):
+            idx = 0
+        
+        escolhida = noticias[idx]
+        resumo = buscar_resumo(escolhida['u'])
+        
+        # Monta a linha única para o OLED
+        # Formato: [HORA] TITULO | RESUMO
+        conteudo_final = f"{agora} - {escolhida['t']} | {resumo}"
+        
+        # Salva para o OLED ler
+        with open("apifutebol.txt", "w", encoding="utf-8") as f:
+            f.write(conteudo_final)
             
-            # Busca os links das matérias
-            cards = site.find_all('a', href=True)
-            noticias_encontradas = []
+        # Salva o próximo índice
+        with open(indice_file, "w") as f:
+            f.write(str(idx + 1))
 
-            for card in cards:
-                titulo = card.find(['h2', 'h3'])
-                link = card['href']
-                if titulo and len(titulo.text.strip()) > 30:
-                    url_completa = link if link.startswith('http') else url_base + link
-                    noticias_encontradas.append({
-                        'titulo': titulo.text.strip(),
-                        'url': url_completa
-                    })
+        print(f"Atualizado: {conteudo_final}")
 
-            # Agora percorre cada notícia encontrada
-            for item in noticias_encontradas[:5]: # Pega as 5 últimas
-                agora = datetime.now(fuso).strftime('%H:%M')
-                resumo = buscar_conteudo_materia(item['url'])
-                
-                # Formata a linha única para o OLED
-                conteudo_final = f"{agora} - {item['titulo']} | {resumo}"
-                
-                with open("apifutebol.txt", "w", encoding="utf-8") as f:
-                    f.write(conteudo_final)
-                
-                print(f"Exibindo agora: {item['titulo']}")
-                
-                # Tempo de espera antes de mudar para a próxima notícia (ex: 20 segundos)
-                time.sleep(20) 
-
-        except Exception as e:
-            print(f"Erro no loop: {e}")
-            time.sleep(60) # Espera um minuto se der erro de conexão
+    except Exception as e:
+        print(f"Erro: {e}")
 
 if __name__ == "__main__":
-    rodar_noticias()
+    executar()
