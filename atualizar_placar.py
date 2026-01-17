@@ -28,7 +28,7 @@ def executar():
             
             if idx >= len(titulos) or idx >= 10: idx = 0
             
-            texto = f"{agora} - NBA: {titulos[idx]}"
+            texto = f"{agora} - CORINTHIANS: {titulos[idx]}"
             
             with open("indice.txt", "w") as f:
                 f.write(str(idx + 1))
