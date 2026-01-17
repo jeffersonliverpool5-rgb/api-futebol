@@ -2,45 +2,69 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
-import random
+import time
 
-def buscar_noticia_variada():
+def buscar_conteudo_materia(url_materia):
     try:
-        url = "https://www.lance.com.br/futebol-americano"
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        resp = requests.get(url_materia, headers=headers, timeout=10)
+        soup = BeautifulSoup(resp.text, 'html.parser')
         
-        resposta = requests.get(url, headers=headers, timeout=15)
-        fuso = pytz.timezone('America/Sao_Paulo')
-        agora = datetime.now(fuso).strftime('%H:%M')
+        # Tenta encontrar o primeiro parágrafo da notícia
+        paragrafo = soup.find('p')
+        if paragrafo:
+            texto = paragrafo.text.strip()
+            return (texto[:100] + '...') if len(texto) > 100 else texto
+        return "Conteúdo indisponível."
+    except:
+        return "Erro ao ler matéria."
 
-        if resposta.status_code == 200:
+def rodar_noticias():
+    url_base = "https://www.lance.com.br"
+    url_nfl = "https://www.lance.com.br/futebol-americano"
+    headers = {'User-Agent': 'Mozilla/5.0'}
+    fuso = pytz.timezone('America/Sao_Paulo')
+
+    print("Iniciando carrossel de notícias... (Ctrl+C para parar)")
+
+    while True:
+        try:
+            resposta = requests.get(url_nfl, headers=headers, timeout=15)
             site = BeautifulSoup(resposta.text, 'html.parser')
             
-            # Pega todos os títulos de notícias
-            manchetes = site.find_all(['h3', 'h2'])
-            
-            # Filtra apenas notícias reais (textos longos e sem ser propaganda)
-            lista_noticias = []
-            for m in manchetes:
-                texto = m.text.strip()
-                if len(texto) > 35 and "Últimas notícias" not in texto:
-                    lista_noticias.append(texto)
-            
-            if lista_noticias:
-                # Escolhe uma notícia aleatória da lista das 10 primeiras
-                # Assim, a cada 3 horas, a chance de mudar no seu OLED é gigante
-                noticia_escolhida = random.choice(lista_noticias[:10])
-                return f"{agora} - {noticia_escolhida}"
-        
-        return f"{agora} - Sem noticias novas."
-        
-    except Exception as e:
-        return f"{agora} - Erro na busca."
+            # Busca os links das matérias
+            cards = site.find_all('a', href=True)
+            noticias_encontradas = []
+
+            for card in cards:
+                titulo = card.find(['h2', 'h3'])
+                link = card['href']
+                if titulo and len(titulo.text.strip()) > 30:
+                    url_completa = link if link.startswith('http') else url_base + link
+                    noticias_encontradas.append({
+                        'titulo': titulo.text.strip(),
+                        'url': url_completa
+                    })
+
+            # Agora percorre cada notícia encontrada
+            for item in noticias_encontradas[:5]: # Pega as 5 últimas
+                agora = datetime.now(fuso).strftime('%H:%M')
+                resumo = buscar_conteudo_materia(item['url'])
+                
+                # Formata a linha única para o OLED
+                conteudo_final = f"{agora} - {item['titulo']} | {resumo}"
+                
+                with open("apifutebol.txt", "w", encoding="utf-8") as f:
+                    f.write(conteudo_final)
+                
+                print(f"Exibindo agora: {item['titulo']}")
+                
+                # Tempo de espera antes de mudar para a próxima notícia (ex: 20 segundos)
+                time.sleep(20) 
+
+        except Exception as e:
+            print(f"Erro no loop: {e}")
+            time.sleep(60) # Espera um minuto se der erro de conexão
 
 if __name__ == "__main__":
-    conteudo = buscar_noticia_variada()
-    
-    # Salva em uma única linha para facilitar a leitura no seu display OLED
-    with open("apifutebol.txt", "w", encoding="utf-8") as f:
-        f.write(conteudo)
-    print(f"Postado no arquivo: {conteudo}")
+    rodar_noticias()
