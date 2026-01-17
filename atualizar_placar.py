@@ -5,7 +5,6 @@ import pytz
 import os
 
 def executar():
-    # Define o fuso horário de Brasília
     fuso = pytz.timezone('America/Sao_Paulo')
     agora = datetime.now(fuso).strftime('%H:%M')
     
@@ -15,31 +14,30 @@ def executar():
         res = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(res.text, 'html.parser')
         
-        # Filtra títulos que tenham mais de 35 letras (manchetes reais)
-        noticias = [t.get_text().strip() for t in soup.find_all(['h2', 'h3']) if len(t.get_text().strip()) > 35]
+        # Pega as manchetes do site
+        manchetes = [t.get_text().strip() for t in soup.find_all(['h2', 'h3']) if len(t.get_text().strip()) > 30]
         
-        if not noticias:
-            final = f"{agora} - Sem noticias novas no site."
+        if not manchetes:
+            final = f"{agora} - Buscando noticias da NFL..."
         else:
-            # Gerencia qual noticia exibir (0, 1, 2...)
-            if not os.path.exists("indice.txt"):
-                with open("indice.txt", "w") as f: f.write("0")
+            # Lógica para mudar a notícia a cada 3 horas
+            indice_file = "indice.txt"
+            idx = 0
+            if os.path.exists(indice_file):
+                with open(indice_file, "r") as f:
+                    try: idx = int(f.read().strip())
+                    except: idx = 0
             
-            with open("indice.txt", "r") as f:
-                idx = int(f.read().strip())
+            if idx >= len(manchetes) or idx >= 10: idx = 0
             
-            # Se chegar ao fim das 10 primeiras, volta ao começo
-            if idx >= len(noticias) or idx >= 10: idx = 0
+            final = f"{agora} - NFL: {manchetes[idx]}"
             
-            final = f"{agora} - {noticias[idx]}"
-            
-            # Salva o próximo índice para a próxima execução
-            with open("indice.txt", "w") as f:
+            with open(indice_file, "w") as f:
                 f.write(str(idx + 1))
     except:
-        final = f"{agora} - Erro ao acessar o site."
+        final = f"{agora} - Erro ao carregar site do Lance."
 
-    # Escreve a linha única no arquivo que o seu OLED consome
+    # ESCREVE NO ARQUIVO DA FOTO
     with open("apifutebol.txt", "w", encoding="utf-8") as f:
         f.write(final)
 
