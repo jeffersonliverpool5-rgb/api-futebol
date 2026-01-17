@@ -4,24 +4,9 @@ from datetime import datetime
 import pytz
 import os
 
-def buscar_resumo(url_materia):
-    try:
-        headers = {'User-Agent': 'Mozilla/5.0'}
-        resp = requests.get(url_materia, headers=headers, timeout=10)
-        soup = BeautifulSoup(resp.text, 'html.parser')
-        # Tenta pegar o primeiro parágrafo longo
-        paragrafos = soup.find_all('p')
-        for p in paragrafos:
-            texto = p.get_text().strip()
-            if len(texto) > 40:
-                return texto[:80] + "..."
-        return ""
-    except:
-        return ""
-
 def executar():
     url_nfl = "https://www.lance.com.br/futebol-americano"
-    headers = {'User-Agent': 'Mozilla/5.0'}
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
     fuso = pytz.timezone('America/Sao_Paulo')
     agora = datetime.now(fuso).strftime('%H:%M')
 
@@ -29,45 +14,47 @@ def executar():
         resposta = requests.get(url_nfl, headers=headers, timeout=15)
         site = BeautifulSoup(resposta.text, 'html.parser')
         
-        # Pega todos os links que tenham títulos dentro
-        tags_noticias = site.find_all('a')
-        noticias = []
+        # Pega os títulos das notícias (h2 ou h3)
+        manchetes = site.find_all(['h2', 'h3'])
         
-        for tag in tags_noticias:
-            titulo = tag.find(['h2', 'h3'])
-            link = tag.get('href')
-            if titulo and link:
-                texto_titulo = titulo.get_text().strip()
-                if len(texto_titulo) > 25:
-                    url_completa = link if link.startswith('http') else f"https://www.lance.com.br{link}"
-                    noticias.append({'t': texto_titulo, 'u': url_completa})
+        lista_noticias = []
+        for m in manchetes:
+            texto = m.get_text().strip()
+            # Filtra apenas textos que pareçam manchetes reais
+            if len(texto) > 35 and "Últimas notícias" not in texto:
+                lista_noticias.append(texto)
 
-        if not noticias:
-            conteudo_final = f"{agora} - Nenhuma noticia encontrada no site."
+        if not lista_noticias:
+            conteudo = f"{agora} - Sem noticias novas no momento."
         else:
-            # Controle de índice
-            if not os.path.exists("indice.txt"):
-                with open("indice.txt", "w") as f: f.write("0")
+            # Lógica para rotacionar a notícia a cada execução
+            indice_file = "indice.txt"
+            idx = 0
+            if os.path.exists(indice_file):
+                with open(indice_file, "r") as f:
+                    try:
+                        idx = int(f.read().strip())
+                    except:
+                        idx = 0
             
-            with open("indice.txt", "r") as f:
-                idx = int(f.read().strip())
+            # Se chegar no fim da lista (ou passar de 10), volta ao início
+            if idx >= len(lista_noticias) or idx >= 10:
+                idx = 0
             
-            if idx >= len(noticias) or idx > 10: idx = 0
+            noticia_escolhida = lista_noticias[idx]
+            conteudo = f"{agora} - {noticia_escolhida}"
             
-            escolhida = noticias[idx]
-            resumo = buscar_resumo(escolhida['u'])
-            conteudo_final = f"{agora} - {escolhida['t']} | {resumo}"
-            
-            with open("indice.txt", "w") as f:
+            # Salva o próximo índice para a próxima rodada
+            with open(indice_file, "w") as f:
                 f.write(str(idx + 1))
 
+        # Salva o arquivo que o seu OLED lê
         with open("apifutebol.txt", "w", encoding="utf-8") as f:
-            f.write(conteudo_final)
-        print(f"Sucesso: {conteudo_final}")
+            f.write(conteudo)
+            
+        print(f"Postado: {conteudo}")
 
     except Exception as e:
-        with open("apifutebol.txt", "w", encoding="utf-8") as f:
-            f.write(f"{agora} - Erro ao processar dados.")
         print(f"Erro: {e}")
 
 if __name__ == "__main__":
