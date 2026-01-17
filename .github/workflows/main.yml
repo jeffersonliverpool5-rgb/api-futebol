@@ -1,17 +1,17 @@
-name: Atualizar Display NFL
+name: NFL_OLED_3H
 
 on:
   schedule:
-    - cron: '*/15 * * * *' # Roda a cada 15 minutos
-  workflow_dispatch: # Botão para rodar na hora que quiser
+    - cron: '0 */3 * * *' # Roda a cada 3 horas (00:00, 03:00, 06:00...)
+  workflow_dispatch: # Permite rodar manualmente clicando no botão
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Permissão essencial para salvar o arquivo txt no seu repo
     steps:
-      - name: Checkout
+      - name: Checkout do Código
         uses: actions/checkout@v3
 
       - name: Configurar Python
@@ -19,16 +19,16 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Bibliotecas
+      - name: Instalar Dependencias
         run: pip install requests beautifulsoup4 pytz
 
-      - name: Executar Script
+      - name: Rodar Script de Noticias
         run: python noticias.py
 
-      - name: Salvar Mudancas
+      - name: Salvar Alteracoes (Push)
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add apifutebol.txt indice.txt
-          git commit -m "Rodando carrossel de noticias" || exit 0
+          git commit -m "Update NFL: $(date)" || exit 0
           git push
