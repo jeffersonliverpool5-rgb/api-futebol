@@ -1,36 +1,28 @@
-name: Atualizar Noticia NFL
-
+name: Atualizar NFL
 on:
   schedule:
-    - cron: '*/15 * * * *' # Roda a cada 15 minutos
-  workflow_dispatch: # Permite rodar manualmente pelo botão no GitHub
-
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write # Essencial para o bot conseguir salvar o arquivo txt
-
     steps:
-    - name: Checkout do código
-      uses: actions/checkout@v3
-
-    - name: Instalar Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.9'
-
-    - name: Instalar Bibliotecas
-      run: |
-        pip install requests beautifulsoup4 pytz
-
-    - name: Executar Script
-      run: python noticias.py
-
-    - name: Commit e Push das mudanças
-      run: |
-        git config --global user.name "GitHub Action Bot"
-        git config --global user.email "actions@github.com"
-        git add apifutebol.txt indice.txt
-        git commit -m "Notícia atualizada: $(date)" || exit 0
-        git push
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: true
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 pytz
+      - name: Run script
+        run: python noticias.py
+      - name: Commit changes
+        run: |
+          git config --local user.email "bot@github.com"
+          git config --local user.name "Bot"
+          git add apifutebol.txt indice.txt
+          git commit -m "Update $(date)" || echo "Nada para commitar"
+          git push
