@@ -6,7 +6,7 @@ import random
 
 def buscar_noticia_variada():
     try:
-        url = "https://www.lance.com.br/corinthians"
+        url = "https://www.lance.com.br/futebol-americano"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         
         resposta = requests.get(url, headers=headers, timeout=15)
