@@ -9,7 +9,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # PERMISSÃO DE ESCRITA
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -19,17 +19,16 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Instalar Bibliotecas
+      - name: Install Bibliotecas
         run: pip install requests beautifulsoup4 pytz
 
-      - name: Executar Script
+      - name: Run Script
         run: python atualizar_placar.py
 
-      - name: Atualizar no GitHub
+      - name: Commit and Push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add apifutebol.txt indice.txt
-          git pull --rebase origin main
-          git commit -m "Noticia Atualizada" || exit 0
-          git push origin main
+          git commit -m "Update NFL" || exit 0
+          git push
