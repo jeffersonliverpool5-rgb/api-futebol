@@ -2,60 +2,45 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 import pytz
-import os
+import random
 
-def executar():
-    url_nfl = "https://www.lance.com.br/futebol-americano"
-    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
-    fuso = pytz.timezone('America/Sao_Paulo')
-    agora = datetime.now(fuso).strftime('%H:%M')
-
+def buscar_noticia_variada():
     try:
-        resposta = requests.get(url_nfl, headers=headers, timeout=15)
-        site = BeautifulSoup(resposta.text, 'html.parser')
+        url = "https://www.lance.com.br/futebol-americano"
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'}
         
-        # Pega os títulos das notícias (h2 ou h3)
-        manchetes = site.find_all(['h2', 'h3'])
+        resposta = requests.get(url, headers=headers, timeout=15)
+        fuso = pytz.timezone('America/Sao_Paulo')
+        agora = datetime.now(fuso).strftime('%H:%M')
+
+        if resposta.status_code == 200:
+            site = BeautifulSoup(resposta.text, 'html.parser')
+            
+            # Pega todos os títulos de notícias
+            manchetes = site.find_all(['h3', 'h2'])
+            
+            # Filtra apenas notícias reais (textos longos e sem ser propaganda)
+            lista_noticias = []
+            for m in manchetes:
+                texto = m.text.strip()
+                if len(texto) > 35 and "Últimas notícias" not in texto:
+                    lista_noticias.append(texto)
+            
+            if lista_noticias:
+                # Escolhe uma notícia aleatória da lista das 10 primeiras
+                # Assim, a cada 3 horas, a chance de mudar no seu OLED é gigante
+                noticia_escolhida = random.choice(lista_noticias[:10])
+                return f"{agora} - {noticia_escolhida}"
         
-        lista_noticias = []
-        for m in manchetes:
-            texto = m.get_text().strip()
-            # Filtra apenas textos que pareçam manchetes reais
-            if len(texto) > 35 and "Últimas notícias" not in texto:
-                lista_noticias.append(texto)
-
-        if not lista_noticias:
-            conteudo = f"{agora} - Sem noticias novas no momento."
-        else:
-            # Lógica para rotacionar a notícia a cada execução
-            indice_file = "indice.txt"
-            idx = 0
-            if os.path.exists(indice_file):
-                with open(indice_file, "r") as f:
-                    try:
-                        idx = int(f.read().strip())
-                    except:
-                        idx = 0
-            
-            # Se chegar no fim da lista (ou passar de 10), volta ao início
-            if idx >= len(lista_noticias) or idx >= 10:
-                idx = 0
-            
-            noticia_escolhida = lista_noticias[idx]
-            conteudo = f"{agora} - {noticia_escolhida}"
-            
-            # Salva o próximo índice para a próxima rodada
-            with open(indice_file, "w") as f:
-                f.write(str(idx + 1))
-
-        # Salva o arquivo que o seu OLED lê
-        with open("apifutebol.txt", "w", encoding="utf-8") as f:
-            f.write(conteudo)
-            
-        print(f"Postado: {conteudo}")
-
+        return f"{agora} - Sem noticias novas."
+        
     except Exception as e:
-        print(f"Erro: {e}")
+        return f"{agora} - Erro na busca."
 
 if __name__ == "__main__":
-    executar()
+    conteudo = buscar_noticia_variada()
+    
+    # Salva em uma única linha para facilitar a leitura no seu display OLED
+    with open("apifutebol.txt", "w", encoding="utf-8") as f:
+        f.write(conteudo)
+    print(f"Postado no arquivo: {conteudo}")
