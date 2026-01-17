@@ -9,7 +9,7 @@ def executar():
     agora = datetime.now(fuso).strftime('%H:%M')
     
     try:
-        url = "https://www.lance.com.br/futebol-americano"
+        url = "https://www.espn.com.br/nba/"
         headers = {'User-Agent': 'Mozilla/5.0'}
         res = requests.get(url, headers=headers, timeout=15)
         soup = BeautifulSoup(res.text, 'html.parser')
