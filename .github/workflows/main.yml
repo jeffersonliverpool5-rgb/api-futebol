@@ -2,36 +2,33 @@ name: Bot_NFL_OLED
 
 on:
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '0 */3 * * *' # Roda a cada 3 horas
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # PERMISSÃO DE ESCRITA
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          persist-credentials: true
 
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Deps
+      - name: Install Bibliotecas
         run: pip install requests beautifulsoup4 pytz
 
       - name: Run Script
         run: python atualizar_placar.py
 
-      - name: Commit e Push Seguro
+      - name: Commit and Push
         run: |
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add apifutebol.txt indice.txt
-          git pull --rebase origin main
-          git commit -m "Rodando Carrossel: $(date)" || exit 0
-          git push origin main
+          git commit -m "Update NFL" || exit 0
+          git push
