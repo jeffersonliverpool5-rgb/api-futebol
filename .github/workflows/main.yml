@@ -1,34 +1,34 @@
-name: NFL_OLED_3H
+name: Atualizar_TXT_NFL
 
 on:
   schedule:
-    - cron: '0 */3 * * *' # Roda a cada 3 horas (00:00, 03:00, 06:00...)
-  workflow_dispatch: # Permite rodar manualmente clicando no botão
+    - cron: '0 */3 * * *' # Roda a cada 3 horas exatamente
+  workflow_dispatch:      # Permite rodar manualmente pelo botão
 
 jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Permissão essencial para salvar o arquivo txt no seu repo
+      contents: write     # Permissão para o robô gravar no seu repositório
     steps:
-      - name: Checkout do Código
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Configurar Python
+      - name: Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
 
-      - name: Instalar Dependencias
+      - name: Instalar Bibliotecas
         run: pip install requests beautifulsoup4 pytz
 
-      - name: Rodar Script de Noticias
+      - name: Rodar Script
         run: python noticias.py
 
-      - name: Salvar Alteracoes (Push)
+      - name: Atualizar o arquivo no GitHub
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git add apifutebol.txt indice.txt
-          git commit -m "Update NFL: $(date)" || exit 0
+          git commit -m "Noticia atualizada: $(date)" || exit 0
           git push
