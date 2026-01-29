@@ -11,7 +11,7 @@ def executar():
     
     try:
         # URL da ESPN (ajuste para a seção desejada)
-        url = "https://www.lance.com.br/corinthians"
+        url = "https://noticiasdatv.uol.com.br/canal/novelas-6"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         
         res = requests.get(url, headers=headers, timeout=15)
