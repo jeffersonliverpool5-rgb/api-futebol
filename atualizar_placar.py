@@ -11,7 +11,7 @@ def executar():
     
     try:
         # URL da ESPN (ajuste para a seção desejada)
-        url = "https://ge.globo.com/combate"
+        url = "https://www.lance.com.br/lutas"
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
         
         res = requests.get(url, headers=headers, timeout=15)
@@ -40,7 +40,7 @@ def executar():
             
             # Formata o texto final e aplica .upper() para LETRAS DE FORMA
             # Você pode alterar 'CORINTHIANS' para o tema que preferir
-            texto = f"{agora} - CORINTHIANS: {titulos[idx]}".upper()
+            texto = f"{agora} - UFC: {titulos[idx]}".upper()
             
             # Salva o próximo índice
             with open("indice.txt", "w") as f:
