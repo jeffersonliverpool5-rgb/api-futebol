@@ -40,7 +40,7 @@ def executar():
             
             # Formata o texto final e aplica .upper() para LETRAS DE FORMA
             # Você pode alterar 'CORINTHIANS' para o tema que preferir
-            texto = f"{agora} - CORINTHIANS {titulos[idx]}".upper()
+            texto = f"{agora} CORINTHIANS {titulos[idx]}".upper()
             
             # Salva o próximo índice
             with open("indice.txt", "w") as f:
